@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://metamind-backend-5tu9.onrender.com/api",
+  baseURL: "https://metamind-backend-5tu9.onrender.com",
 });
 
 api.interceptors.request.use((config) => {
