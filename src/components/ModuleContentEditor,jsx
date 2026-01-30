@@ -1,0 +1,234 @@
+// frontend/src/components/ModuleContentEditor.jsx
+import React, { useState, useEffect } from 'react';
+import { FiPlus, FiTrash2, FiChevronUp, FiChevronDown } from 'react-icons/fi';
+
+const ModuleContentEditor = ({ content, onChange }) => {
+  const [contents, setContents] = useState(
+    content && content.length > 0 ? content : [
+      {
+        id: 1,
+        type: "concept",
+        title: "New Content",
+        content: "## Heading\n\nYour content here...\n\n**Example:** Example text",
+        questions: ["What did you learn?"],
+        practiceProblems: ["Practice problem 1"]
+      }
+    ]
+  );
+
+  // Initialize if empty
+  useEffect(() => {
+    if (!content || content.length === 0) {
+      const initialContent = [{
+        id: 1,
+        type: "concept",
+        title: "New Content",
+        content: "## Heading\n\nYour content here...\n\n**Example:** Example text",
+        questions: ["What did you learn?"],
+        practiceProblems: ["Practice problem 1"]
+      }];
+      setContents(initialContent);
+      onChange(initialContent);
+    }
+  }, [content, onChange]);
+
+  const handleAddContent = () => {
+    const newId = contents.length > 0 ? Math.max(...contents.map(c => c.id)) + 1 : 1;
+    const newContent = {
+      id: newId,
+      type: "concept",
+      title: `Content ${newId}`,
+      content: "## New Section\n\nStart writing your content here...",
+      questions: ["What is the main idea?"],
+      practiceProblems: ["Try this practice problem"]
+    };
+    const updated = [...contents, newContent];
+    setContents(updated);
+    onChange(updated);
+  };
+
+  const handleUpdateContent = (index, field, value) => {
+    const updated = [...contents];
+    
+    // Special handling for arrays (questions and practiceProblems)
+    if (field === 'questions' || field === 'practiceProblems') {
+      // Convert string to array if it's a string (from textarea)
+      if (typeof value === 'string') {
+        updated[index][field] = value.split('\n').filter(line => line.trim() !== '');
+      } else {
+        updated[index][field] = value;
+      }
+    } else {
+      updated[index][field] = value;
+    }
+    
+    setContents(updated);
+    onChange(updated);
+  };
+
+  const handleRemoveContent = (index) => {
+    if (contents.length <= 1) {
+      alert("You must have at least one content item");
+      return;
+    }
+    
+    const updated = contents.filter((_, i) => i !== index);
+    setContents(updated);
+    onChange(updated);
+  };
+
+  const moveContent = (index, direction) => {
+    if (
+      (direction === 'up' && index === 0) ||
+      (direction === 'down' && index === contents.length - 1)
+    ) {
+      return;
+    }
+    
+    const updated = [...contents];
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+    setContents(updated);
+    onChange(updated);
+  };
+
+  const typeOptions = [
+    { value: 'concept', label: 'Concept', color: 'bg-purple-100 text-purple-700' },
+    { value: 'example', label: 'Example', color: 'bg-blue-100 text-blue-700' },
+    { value: 'practice', label: 'Practice', color: 'bg-green-100 text-green-700' },
+    { value: 'review', label: 'Review', color: 'bg-yellow-100 text-yellow-700' }
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center mb-4">
+        <h4 className="font-medium text-gray-700">Module Content</h4>
+        <button
+          type="button"
+          onClick={handleAddContent}
+          className="flex items-center px-3 py-1.5 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+        >
+          <FiPlus className="mr-1.5" /> Add Content
+        </button>
+      </div>
+
+      {contents.map((item, index) => (
+        <div key={item.id} className="border border-gray-300 rounded-lg p-4 bg-white shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center space-x-3">
+              <span className="font-medium text-gray-900">Item {index + 1}</span>
+              <div className="flex items-center space-x-1">
+                <button
+                  type="button"
+                  onClick={() => moveContent(index, 'up')}
+                  disabled={index === 0}
+                  className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-30"
+                >
+                  <FiChevronUp />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveContent(index, 'down')}
+                  disabled={index === contents.length - 1}
+                  className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-30"
+                >
+                  <FiChevronDown />
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <select
+                value={item.type}
+                onChange={(e) => handleUpdateContent(index, 'type', e.target.value)}
+                className="text-sm border border-gray-300 rounded px-3 py-1.5 bg-white"
+              >
+                {typeOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => handleRemoveContent(index)}
+                className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
+                title="Remove this content"
+              >
+                <FiTrash2 />
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Title *
+              </label>
+              <input
+                type="text"
+                value={item.title}
+                onChange={(e) => handleUpdateContent(index, 'title', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Content title"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Content (Markdown supported) *
+              </label>
+              <textarea
+                value={item.content}
+                onChange={(e) => handleUpdateContent(index, 'content', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px] font-mono text-sm"
+                placeholder="## Heading
+
+Your content here...
+
+**Example:** Example text
+**Note:** Important note"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Supports: ## Headings, **bold**, *italic*, lists, `code`
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Questions (one per line)
+                </label>
+                <textarea
+                  value={item.questions?.join('\n') || ''}
+                  onChange={(e) => handleUpdateContent(index, 'questions', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
+                  placeholder="What is the main concept?
+Why is this important?
+How does this apply?"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Practice Problems (one per line)
+                </label>
+                <textarea
+                  value={item.practiceProblems?.join('\n') || ''}
+                  onChange={(e) => handleUpdateContent(index, 'practiceProblems', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[80px]"
+                  placeholder="Solve: 2 + 2 = ?
+Calculate the area of...
+Explain the concept of..."
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+export default ModuleContentEditor;
